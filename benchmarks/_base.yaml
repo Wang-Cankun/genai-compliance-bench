@@ -1,0 +1,4 @@
+defaults:
+  severity: medium
+  case_insensitive: true
+  enabled: true
