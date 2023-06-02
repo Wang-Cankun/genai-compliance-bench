@@ -1,0 +1,13 @@
+rules:
+  - id: PII-001
+    category: pii_exposure
+    severity: critical
+    description: "SSN detected in output"
+    pattern: '\b\d{3}-\d{2}-\d{4}\b'
+    regulation_ref: "GLBA-501"
+  - id: PII-002
+    category: pii_exposure
+    severity: high
+    description: "Credit card number detected"
+    pattern: '\b(?:\d{4}[- ]?){3}\d{4}\b'
+    regulation_ref: "PCI-DSS-3.4"
