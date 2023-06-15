@@ -1,0 +1,7 @@
+rules:
+  - id: DISC-001
+    category: financial_disclosure
+    severity: high
+    description: "Investment advice without risk disclaimer"
+    keywords: ["guaranteed return", "risk-free investment", "guaranteed profit"]
+    regulation_ref: "SEC-IA"
