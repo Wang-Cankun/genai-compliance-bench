@@ -1,0 +1,13 @@
+rules:
+  - id: FAIR-001
+    category: fair_lending
+    severity: critical
+    description: "Discriminatory language based on protected class"
+    keywords: ["race", "ethnicity", "gender", "religion", "national origin"]
+    regulation_ref: "ECOA"
+  - id: FAIR-002
+    category: fair_lending
+    severity: high
+    description: "Age-based discrimination in credit decision"
+    pattern: '(?i)(denied|reject).*\b(age|too old|elderly)\b'
+    regulation_ref: "ECOA"
