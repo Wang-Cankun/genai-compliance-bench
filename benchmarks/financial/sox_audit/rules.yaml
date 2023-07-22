@@ -1,0 +1,13 @@
+rules:
+  - id: SOX-001
+    category: audit_trail
+    severity: critical
+    description: "Audit trail modification language detected"
+    keywords: ["delete audit", "remove log", "clear history", "erase record"]
+    regulation_ref: "SOX-302"
+  - id: SOX-002
+    category: internal_controls
+    severity: high
+    description: "Internal control override language"
+    keywords: ["bypass control", "override approval", "skip verification"]
+    regulation_ref: "SOX-404"
