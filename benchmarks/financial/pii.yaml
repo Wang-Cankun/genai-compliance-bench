@@ -1,13 +1,34 @@
+# Financial sector: PII and sensitive data exposure rules
 rules:
-  - id: PII-001
+  - id: fin-pii-001
     category: pii_exposure
     severity: critical
-    description: "SSN detected in output"
+    description: Social Security Number detected in output
+    regulation_ref: GLBA-501
     pattern: '\b\d{3}-\d{2}-\d{4}\b'
-    regulation_ref: "GLBA-501"
-  - id: PII-002
+
+  - id: fin-pii-002
+    category: pii_exposure
+    severity: critical
+    description: Full credit card number (PAN) detected in output
+    regulation_ref: PCI-DSS-3.4
+    pattern: '\b(?:4\d{3}|5[1-5]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))[- ]?\d{4}[- ]?\d{4}[- ]?\d{1,4}\b'
+
+  - id: fin-pii-003
     category: pii_exposure
     severity: high
-    description: "Credit card number detected"
-    pattern: '\b(?:\d{4}[- ]?){3}\d{4}\b'
-    regulation_ref: "PCI-DSS-3.4"
+    description: Bank account number pattern detected in output
+    regulation_ref: GLBA
+    pattern: '\b(account\s*(?:number|#|no\.?)\s*[:=]?\s*\d{8,17})\b'
+    case_insensitive: true
+
+  - id: fin-pii-004
+    category: pii_exposure
+    severity: high
+    description: PII appears in proximity to financial data, increasing exposure risk
+    regulation_ref: GLBA-501
+    condition:
+      type: pii_proximity
+      pii_pattern: '\b\d{3}-\d{2}-\d{4}\b'
+      data_pattern: '\$[\d,]+\.?\d*'
+      max_char_distance: 200
