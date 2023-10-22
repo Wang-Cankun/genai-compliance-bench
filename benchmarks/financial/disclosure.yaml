@@ -1,7 +1,56 @@
+# Financial sector: disclosure and advisory compliance rules
 rules:
-  - id: DISC-001
+  - id: fin-disc-001
     category: financial_disclosure
     severity: high
-    description: "Investment advice without risk disclaimer"
-    keywords: ["guaranteed return", "risk-free investment", "guaranteed profit"]
-    regulation_ref: "SEC-IA"
+    description: Investment advice provided without required risk disclaimer
+    regulation_ref: SOX-302
+    condition:
+      type: missing_disclaimer
+      phrases:
+        - "past performance is not indicative of future results"
+        - "not a guarantee of future performance"
+        - "investment involves risk"
+    applies_to:
+      - investment_advisory
+      - financial_planning
+
+  - id: fin-disc-002
+    category: financial_disclosure
+    severity: critical
+    description: Guaranteed returns language violates SEC fair disclosure rules
+    regulation_ref: SOX
+    pattern: '\b(guarantee[ds]?\s+returns?|guarantee[ds]?\s+(profits?|income)|risk[\s-]*free\s+(investment|returns?)|cannot\s+lose\s+money)\b'
+
+  - id: fin-disc-003
+    category: financial_disclosure
+    severity: medium
+    description: Forward-looking statement without safe harbor disclaimer
+    regulation_ref: SOX
+    keywords:
+      - "will increase in value"
+      - "expected to outperform"
+      - "projected returns"
+      - "forecast growth"
+    condition:
+      type: missing_disclaimer
+      phrases:
+        - "forward-looking statement"
+        - "actual results may differ"
+        - "no assurance"
+
+  - id: fin-disc-004
+    category: credit_data
+    severity: high
+    description: Credit decision output missing adverse action notice requirement
+    regulation_ref: FCRA
+    keywords:
+      - "application denied"
+      - "credit declined"
+      - "not approved"
+    condition:
+      type: missing_disclaimer
+      phrases:
+        - "adverse action notice"
+        - "right to dispute"
+        - "free copy of your credit report"
