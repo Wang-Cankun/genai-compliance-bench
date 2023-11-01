@@ -1,13 +1,361 @@
+# Fair Lending Compliance Rules
+# Evaluates AI outputs for discriminatory language and ECOA/Reg B compliance
+# Applicable regulations: Equal Credit Opportunity Act (ECOA), Regulation B (12 CFR 1002)
+
+schema_version: "1.0"
+sector: financial
+domain: fair_lending
+last_updated: "2026-03-24"
+
 rules:
-  - id: FAIR-001
-    category: fair_lending
+  - id: FL-001
+    name: race_ethnicity_discrimination
+    description: >
+      Detects references to race or ethnicity used as factors in credit decisions,
+      marketing language, or risk assessments. Any mention of race/ethnicity as a
+      decisional factor violates ECOA prohibited basis provisions.
     severity: critical
-    description: "Discriminatory language based on protected class"
-    keywords: ["race", "ethnicity", "gender", "religion", "national origin"]
-    regulation_ref: "ECOA"
-  - id: FAIR-002
-    category: fair_lending
+    category: protected_class_discrimination
+    regulation_ref:
+      - statute: ECOA
+        section: "15 U.S.C. 1691(a)(1)"
+        description: Prohibition on discrimination based on race or national origin
+      - statute: Reg B
+        section: "12 CFR 1002.4(a)"
+        description: General rule prohibiting discrimination
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)\b(applicant|borrower|customer)\s+.{0,40}\b(race|racial|ethnicity|ethnic\s+background|skin\s+color)\b'
+          label: direct_race_reference_in_decisional_context
+        - regex: '(?i)\b(deny|decline|reject|higher\s+rate|lower\s+limit)\b.{0,60}\b(african.?american|hispanic|latino|asian|caucasian|native\s+american|pacific\s+islander)\b'
+          label: adverse_action_with_race_mention
+        - regex: '(?i)\b(neighborhood|zip\s*code|census\s+tract|redlin)\b.{0,40}\b(risk|score|factor|weight)\b'
+          label: geographic_proxy_for_race
+    remediation: >
+      Remove all references to race, ethnicity, or national origin from credit
+      decisional outputs. Review for proxy variables that correlate with protected
+      classes (e.g., zip code used as risk factor).
+
+  - id: FL-002
+    name: gender_sex_discrimination
+    description: >
+      Detects gender or sex used as a factor in credit decisions or differential
+      treatment language. Includes detection of marital status discrimination
+      which is separately prohibited under ECOA.
+    severity: critical
+    category: protected_class_discrimination
+    regulation_ref:
+      - statute: ECOA
+        section: "15 U.S.C. 1691(a)(1)"
+        description: Prohibition on sex-based discrimination
+      - statute: Reg B
+        section: "12 CFR 1002.5(d)"
+        description: Rules on marital status information
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)\b(deny|decline|limit|adjust)\b.{0,50}\b(gender|sex|male|female|woman|women|man|men)\b'
+          label: adverse_action_gender_reference
+        - regex: '(?i)\b(married|single|divorced|separated|widow)\b.{0,40}\b(risk|factor|score|qualify|eligible)\b'
+          label: marital_status_as_factor
+        - regex: '(?i)\b(maternity|pregnancy|pregnant|child\s*bearing)\b.{0,40}\b(risk|income|stability|factor)\b'
+          label: pregnancy_childbearing_factor
+        - regex: '(?i)\b(husband|wife|spouse)\s.{0,30}\b(co-sign|cosign|required|must)\b'
+          label: spousal_cosigner_requirement
+    remediation: >
+      Eliminate gender, sex, and marital status from all credit evaluation outputs.
+      Spousal cosigner requirements are prohibited except for secured credit involving
+      community property.
+
+  - id: FL-003
+    name: age_discrimination
+    description: >
+      Detects age used as a negative factor in credit decisions. ECOA permits
+      age in empirically derived credit scoring systems but prohibits using age
+      to disadvantage applicants 62 or older.
+    severity: critical
+    category: protected_class_discrimination
+    regulation_ref:
+      - statute: ECOA
+        section: "15 U.S.C. 1691(a)(1)"
+        description: Prohibition on age-based discrimination
+      - statute: Reg B
+        section: "12 CFR 1002.6(b)(2)"
+        description: Age as factor in credit scoring systems
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)\b(too\s+old|too\s+young|elderly|senior\s+citizen)\b.{0,40}\b(risk|deny|decline|ineligible)\b'
+          label: age_based_adverse_language
+        - regex: '(?i)\b(age|years?\s+old)\b.{0,30}\b(negative|penaliz|disadvantage|deduct|subtract)\b'
+          label: age_negative_scoring
+        - regex: '(?i)\b(retire|retirement|fixed\s+income)\b.{0,40}\b(risk\s+factor|unstable|decline)\b'
+          label: retirement_proxy_discrimination
+    remediation: >
+      Remove age as a negative decisional factor. If age is used in a credit scoring
+      system, verify the system is empirically derived and does not assign a negative
+      factor to applicants aged 62 or older per 12 CFR 1002.6(b)(2)(iv).
+
+  - id: FL-004
+    name: disability_discrimination
+    description: >
+      Detects disability status or receipt of public assistance income used
+      improperly in credit evaluations.
+    severity: critical
+    category: protected_class_discrimination
+    regulation_ref:
+      - statute: ECOA
+        section: "15 U.S.C. 1691(a)(2)"
+        description: Prohibition on discrimination based on public assistance income
+      - statute: Reg B
+        section: "12 CFR 1002.6(b)(2)"
+        description: Prohibited information in credit evaluation
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)\b(disab(led|ility)|handicap|impairment)\b.{0,40}\b(risk|deny|decline|ineligible|factor)\b'
+          label: disability_status_as_factor
+        - regex: '(?i)\b(social\s+security\s+(disability|ssi|ssdi)|public\s+assistance|welfare|food\s+stamps|snap)\b.{0,40}\b(unreliable|unstable|temporary|risk)\b'
+          label: public_assistance_negative_treatment
+    remediation: >
+      Disability status must never factor into credit decisions. Public assistance
+      income must be treated as any other income source when evaluating creditworthiness.
+
+  - id: FL-005
+    name: religion_discrimination
+    description: >
+      Detects religious affiliation or practices referenced in credit contexts.
+    severity: critical
+    category: protected_class_discrimination
+    regulation_ref:
+      - statute: ECOA
+        section: "15 U.S.C. 1691(a)(1)"
+        description: Prohibition on religious discrimination
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)\b(religion|religious|faith|church|mosque|synagogue|temple|muslim|christian|jewish|hindu|buddhist|sikh)\b.{0,50}\b(risk|factor|score|deny|decline)\b'
+          label: religion_as_credit_factor
+        - regex: '(?i)\b(sharia|halal|kosher)\b.{0,30}\b(non-?compliant|disqualif|ineligible)\b'
+          label: religious_practice_disqualification
+    remediation: >
+      Remove all references to religious affiliation, beliefs, or practices from
+      credit evaluation outputs.
+
+  - id: FL-006
+    name: national_origin_discrimination
+    description: >
+      Detects national origin, citizenship status, or immigration status used
+      improperly in credit decisions. Note: immigration status may be considered
+      only to determine if the applicant has the legal capacity to enter a binding
+      contract.
+    severity: critical
+    category: protected_class_discrimination
+    regulation_ref:
+      - statute: ECOA
+        section: "15 U.S.C. 1691(a)(1)"
+        description: Prohibition on national origin discrimination
+      - statute: Reg B
+        section: "12 CFR 1002.6(b)(7)"
+        description: Immigration status considerations
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)\b(country\s+of\s+origin|national\s+origin|foreign(\s+born|er)?|immigrant|alien)\b.{0,40}\b(risk|deny|decline|factor|score)\b'
+          label: national_origin_as_factor
+        - regex: '(?i)\b(visa\s+status|h-?1b|green\s+card|undocumented|non-?citizen)\b.{0,40}\b(ineligible|deny|decline|higher\s+rate)\b'
+          label: immigration_status_adverse_action
+        - regex: '(?i)\b(accent|english\s+proficiency|language\s+barrier)\b.{0,40}\b(risk|factor|concern)\b'
+          label: language_proxy_discrimination
+    remediation: >
+      National origin must not factor into credit decisions. Immigration status
+      may only be considered for legal capacity to contract, not as a risk factor.
+
+  - id: FL-007
+    name: ecoa_adverse_action_required_elements
+    description: >
+      Verifies that AI-generated adverse action notices contain all elements
+      required by ECOA and Reg B: statement of action taken, specific reasons
+      for the action (up to four), ECOA notice, and creditor identification.
     severity: high
-    description: "Age-based discrimination in credit decision"
-    pattern: '(?i)(denied|reject).*\b(age|too old|elderly)\b'
-    regulation_ref: "ECOA"
+    category: adverse_action_notice
+    regulation_ref:
+      - statute: Reg B
+        section: "12 CFR 1002.9(a)(2)"
+        description: Required content of adverse action notices
+      - statute: ECOA
+        section: "15 U.S.C. 1691(d)"
+        description: Requirement to provide reasons for adverse action
+    detection:
+      type: required_elements
+      elements:
+        - id: action_statement
+          description: Clear statement of the adverse action taken
+          check_regex: '(?i)(application\s+(was|has\s+been)\s+(denied|declined)|credit\s+(was|has\s+been)\s+(denied|declined|not\s+approved)|adverse\s+action|unfavorable\s+(terms|conditions))'
+          required: true
+        - id: specific_reasons
+          description: Specific principal reasons for the action (1-4 reasons)
+          check_regex: '(?i)(reason|basis|factor)\s*(for|of)\s*(th(e|is)\s+)?(denial|decision|action|determination)'
+          required: true
+        - id: ecoa_notice
+          description: Statement of applicant rights under ECOA
+          check_regex: '(?i)(equal\s+credit\s+opportunity\s+act|federal\s+law\s+prohibits\s+creditors?\s+from\s+discriminat)'
+          required: true
+        - id: creditor_identification
+          description: Name and address of the creditor
+          check_regex: '(?i)(creditor|lender|bank|institution)\s*:\s*\S+'
+          required: true
+        - id: cfpb_contact
+          description: Contact information for the CFPB or applicable regulator
+          check_regex: '(?i)(consumer\s+financial\s+protection\s+bureau|cfpb|consumerfinance\.gov|1[-.]\s*855[-.]\s*411[-.]\s*2372)'
+          required: true
+    remediation: >
+      Adverse action notices must include all required elements per 12 CFR 1002.9.
+      Missing elements expose the institution to regulatory enforcement and private
+      right of action under ECOA.
+
+  - id: FL-008
+    name: adverse_action_reason_specificity
+    description: >
+      Checks that adverse action reasons are specific and not generic. Reg B
+      requires principal reasons to be specific enough for the applicant to
+      understand why the action was taken and identify corrective measures.
+    severity: high
+    category: adverse_action_notice
+    regulation_ref:
+      - statute: Reg B
+        section: "12 CFR 1002.9(b)(2)"
+        description: Statement of specific reasons
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)\b(does\s+not\s+meet\s+(our\s+)?criteria|failed\s+to\s+qualify|did\s+not\s+qualify|insufficient\s+information|various\s+factors?)\b'
+          label: vague_denial_reason
+          description: Generic reasons that do not meet specificity requirements
+        - regex: '(?i)(overall\s+assessment|general\s+review|holistic\s+evaluation|multiple\s+considerations).{0,20}(led\s+to|resulted\s+in|caused)'
+          label: overly_broad_reasoning
+    remediation: >
+      Replace vague reasons with specific factors from the CFPB's sample adverse
+      action reason codes (e.g., "length of time accounts have been established"
+      rather than "insufficient credit history").
+
+  - id: FL-009
+    name: credit_score_disclosure
+    description: >
+      When a credit score is used in the decision, verifies the output includes
+      required credit score disclosures per the Fair Credit Reporting Act as
+      incorporated by Reg B.
+    severity: high
+    category: adverse_action_notice
+    regulation_ref:
+      - statute: FCRA
+        section: "15 U.S.C. 1681g(f)"
+        description: Credit score disclosure requirements
+      - statute: Reg B
+        section: "12 CFR 1002.9(a)(2)(i)"
+        description: Adverse action notice with credit score
+    detection:
+      type: conditional_required_elements
+      condition_regex: '(?i)(credit\s+score|fico|vantage\s*score|beacon\s+score)'
+      elements:
+        - id: score_value
+          description: The actual credit score used
+          check_regex: '(?i)(credit\s+)?score\s*:?\s*\d{3}'
+          required: true
+        - id: score_range
+          description: Range of possible scores under the model
+          check_regex: '(?i)(range|scale)\s*:?\s*\d{3}\s*(to|-)\s*\d{3}'
+          required: true
+        - id: key_factors
+          description: Up to four key factors that adversely affected the score
+          check_regex: '(?i)(key\s+factor|factor|reason).{0,10}(that\s+)?(adversely\s+)?affect'
+          required: true
+        - id: score_source
+          description: Consumer reporting agency that provided the score
+          check_regex: '(?i)(equifax|experian|transunion|consumer\s+reporting\s+agency|credit\s+bureau)'
+          required: true
+    remediation: >
+      When a credit score is used, the adverse action notice must include the score,
+      possible range, key factors, and the source credit bureau.
+
+  - id: FL-010
+    name: steering_language
+    description: >
+      Detects language that steers applicants toward less favorable products
+      based on protected class characteristics rather than creditworthiness.
+    severity: high
+    category: fair_treatment
+    regulation_ref:
+      - statute: ECOA
+        section: "15 U.S.C. 1691(a)"
+        description: Prohibition on discrimination in any aspect of credit transaction
+      - statute: Reg B
+        section: "12 CFR 1002.4(a)"
+        description: General prohibition on discrimination
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(recommend|suggest|steer|direct|guide)\s.{0,40}(subprime|higher\s+rate|FHA|government\s+program).{0,40}(demographic|neighborhood|area|community|population)'
+          label: product_steering_by_demographic
+        - regex: '(?i)(this\s+type\s+of|these\s+types?\s+of)\s+(applicant|borrower|customer|client)s?\s+(typically|usually|tend\s+to|often)\s+(prefer|choose|qualify\s+for|get)'
+          label: stereotypical_product_assignment
+    remediation: >
+      Product recommendations must be based solely on creditworthiness, financial
+      needs, and applicant preferences. Remove any language suggesting product
+      assignment based on demographic characteristics.
+
+  - id: FL-011
+    name: disparate_treatment_indicators
+    description: >
+      Detects language patterns indicating differential treatment or standards
+      applied to similarly situated applicants, a key indicator of disparate
+      treatment under fair lending law.
+    severity: high
+    category: fair_treatment
+    regulation_ref:
+      - statute: ECOA
+        section: "15 U.S.C. 1691(a)"
+        description: Prohibition on discrimination in credit transactions
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(additional\s+(documentation|verification|scrutiny)|extra\s+(review|check|step)).{0,50}(because|due\s+to|given|based\s+on).{0,30}(name|address|neighborhood|background|origin)'
+          label: differential_documentation_requirements
+        - regex: '(?i)(exception|override|discretion|manual\s+review).{0,40}(only\s+for|not\s+for|exclud|certain\s+(types?|groups?|categories?))'
+          label: discretionary_treatment_disparity
+    remediation: >
+      Apply uniform underwriting standards and documentation requirements to all
+      applicants. Discretionary overrides must be documented with creditworthiness-
+      based justifications and monitored for fair lending impact.
+
+  - id: FL-012
+    name: prohibited_information_request
+    description: >
+      Detects AI outputs that request or reference information prohibited under
+      Reg B during the application process.
+    severity: high
+    category: prohibited_inquiries
+    regulation_ref:
+      - statute: Reg B
+        section: "12 CFR 1002.5"
+        description: Rules on requesting information
+    detection:
+      type: keyword_list
+      keywords:
+        - birth_control
+        - family_planning
+        - childbearing_intentions
+        - number_of_children
+        - childcare_expenses_as_separate_factor
+        - alimony_as_mandatory_disclosure
+        - plans_to_have_children
+      patterns:
+        - regex: '(?i)(do\s+you|are\s+you)\s+(plan(ning)?|intend(ing)?)\s+to\s+have\s+(children|kids|a\s+(baby|child|family))'
+          label: childbearing_inquiry
+        - regex: '(?i)(please\s+)?(provide|disclose|state)\s+(your\s+)?(alimony|child\s+support|maintenance)\s+(payment|obligation|income)'
+          label: mandatory_alimony_disclosure
+    remediation: >
+      Reg B prohibits inquiring about birth control practices, childbearing
+      intentions, or capability. Alimony/child support income may only be
+      considered if the applicant voluntarily discloses it.
