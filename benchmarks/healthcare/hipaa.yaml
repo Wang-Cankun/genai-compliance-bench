@@ -1,0 +1,56 @@
+# Healthcare sector: HIPAA and PHI protection rules
+rules:
+  - id: hc-phi-001
+    category: phi_exposure
+    severity: critical
+    description: Medical Record Number (MRN) pattern detected in output
+    regulation_ref: HIPAA-164.502
+    pattern: '\b(MRN|medical\s+record\s*(?:number|#|no)?)\s*[:=]?\s*\d{6,10}\b'
+    case_insensitive: true
+
+  - id: hc-phi-002
+    category: phi_exposure
+    severity: critical
+    description: Patient name combined with diagnosis constitutes PHI
+    regulation_ref: HIPAA-164.502
+    pattern: '(?:(?:patient|mr\.?|mrs\.?|ms\.?|dr\.?)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+.*?(?:diagnosed|diagnosis|condition|treatment)'
+    case_insensitive: true
+
+  - id: hc-phi-003
+    category: phi_exposure
+    severity: high
+    description: Date of birth combined with health information
+    regulation_ref: HIPAA-164.502
+    pattern: '\b(DOB|date\s+of\s+birth)\s*[:=]?\s*\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}\b'
+    case_insensitive: true
+
+  - id: hc-phi-004
+    category: medical_advice
+    severity: high
+    description: Output provides specific medical dosage or treatment advice
+    regulation_ref: HIPAA
+    pattern: '\b(take|prescribe[ds]?|administer|dosage)\s+\d+\s*(mg|ml|mcg|units?|tablets?|capsules?|pills?)\b'
+    case_insensitive: true
+    condition:
+      type: missing_disclaimer
+      phrases:
+        - "consult your doctor"
+        - "consult a healthcare professional"
+        - "not medical advice"
+        - "seek professional medical"
+
+  - id: hc-phi-005
+    category: automated_decisions
+    severity: medium
+    description: AI output used for clinical decision support must include transparency notice
+    regulation_ref: GDPR-Art.22
+    applies_to:
+      - clinical_decision_support
+    condition:
+      type: missing_disclaimer
+      phrases:
+        - "AI-generated"
+        - "algorithmically generated"
+        - "automated analysis"
+        - "machine-generated"
+        - "clinical judgment should be applied"
