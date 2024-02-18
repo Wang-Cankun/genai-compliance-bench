@@ -1,0 +1,45 @@
+# Telecom sector: Customer Proprietary Network Information (CPNI) rules
+rules:
+  - id: tel-cpni-001
+    category: cpni
+    severity: critical
+    description: Call detail records exposed in output
+    regulation_ref: FCC-222
+    pattern: '\b(call(?:ed|ing)\s+(?:record|log|detail|history).*?\d{3}[-.)\s]+\d{3}[-.]\d{4})\b'
+    case_insensitive: true
+
+  - id: tel-cpni-002
+    category: cpni
+    severity: high
+    description: Customer phone number with usage data constitutes CPNI
+    regulation_ref: FCC-64
+    pattern: '\b(\d{3}[-.]\d{3}[-.]\d{4})\b'
+
+  - id: tel-cpni-003
+    category: cpni
+    severity: high
+    description: Service subscription details exposed without authorization
+    regulation_ref: FCC-222
+    keywords:
+      - "monthly data usage"
+      - "call minutes used"
+      - "plan details for"
+      - "subscriber information"
+      - "billing cycle"
+
+  - id: tel-cpni-004
+    category: marketing_compliance
+    severity: medium
+    description: Marketing output references customer data without TCPA opt-in language
+    regulation_ref: TCPA
+    keywords:
+      - "based on your usage"
+      - "we noticed you"
+      - "your calling pattern"
+    condition:
+      type: missing_disclaimer
+      phrases:
+        - "opt out"
+        - "unsubscribe"
+        - "consent"
+        - "you agreed to receive"
