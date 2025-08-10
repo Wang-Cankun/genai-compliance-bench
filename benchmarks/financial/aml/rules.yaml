@@ -1,14 +1,375 @@
+# Anti-Money Laundering (AML) Compliance Rules
+# Evaluates AI outputs for BSA/AML compliance in transaction monitoring,
+# risk assessment, and SAR narrative generation
+# Applicable regulations: Bank Secrecy Act (BSA), FinCEN guidelines, FATF Recommendations
+
+schema_version: "1.0"
+sector: financial
+domain: aml
+last_updated: "2026-03-24"
+
 rules:
   - id: AML-001
-    category: aml
+    name: suspicious_activity_structuring
+    description: >
+      Detects transaction descriptions or AI assessments that fail to flag
+      structuring patterns (breaking transactions into amounts below $10,000
+      to avoid CTR filing requirements). AI outputs should identify and not
+      inadvertently advise on structuring.
     severity: critical
-    description: "Structuring language detected"
-    keywords: ["structuring", "smurfing", "split deposit"]
-    pattern: '(?i)(split|break|divide).{0,30}(transaction|deposit).{0,30}(below|under|avoid).{0,20}(\$\s*10[,.]?000|threshold)'
-    regulation_ref: "BSA"
+    category: suspicious_activity_detection
+    regulation_ref:
+      - statute: BSA
+        section: "31 U.S.C. 5324"
+        description: Prohibition on structuring transactions to evade reporting
+      - statute: FinCEN
+        section: "31 CFR 1010.314"
+        description: Structuring transactions
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(split|break|divide|separate)\s.{0,30}(transaction|deposit|transfer|payment|withdrawal).{0,30}(below|under|less\s+than|avoid).{0,20}(\$\s*10[,.]?000|reporting|threshold|limit)'
+          label: structuring_advisory_language
+        - regex: '(?i)(multiple\s+(cash\s+)?(deposit|transaction|transfer)s?)\s.{0,30}(\$\s*9[,.]?\d{3}|\$\s*[1-8][,.]?\d{3}).{0,20}(same\s+day|consecutive|short\s+period)'
+          label: structuring_pattern_description
+        - regex: '(?i)(to\s+avoid|evade|circumvent|get\s+around)\s.{0,20}(report|fil|ctr|currency\s+transaction|threshold)'
+          label: evasion_intent_language
+    remediation: >
+      AI outputs must never provide guidance on avoiding reporting thresholds.
+      Transaction patterns matching structuring indicators must be flagged for
+      SAR filing consideration per FinCEN guidance.
+
   - id: AML-002
-    category: aml
+    name: high_risk_jurisdiction_assessment
+    description: >
+      Verifies that AI risk assessments properly identify and flag transactions
+      involving high-risk jurisdictions per FATF lists and FinCEN advisories.
     severity: high
-    description: "Suspicious activity indicators"
-    keywords: ["offshore account", "shell company", "money laundering", "layering"]
-    regulation_ref: "BSA"
+    category: risk_assessment
+    regulation_ref:
+      - statute: FATF
+        section: "Recommendation 19"
+        description: Higher-risk countries
+      - statute: FinCEN
+        section: "Advisory FIN-2024-A001"
+        description: Jurisdictions with AML/CFT deficiencies
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(low\s+risk|minimal\s+risk|no\s+concern|routine)\s.{0,40}(iran|north\s+korea|dprk|syria|myanmar|burma|cuba|crimea|afghanistan)'
+          label: high_risk_jurisdiction_downgraded
+        - regex: '(?i)(transaction|transfer|wire|payment)\s.{0,40}(iran|north\s+korea|dprk|syria|myanmar|burma|cuba|crimea).{0,30}(approved|cleared|processed|no\s+action)'
+          label: sanctioned_jurisdiction_cleared
+    remediation: >
+      Transactions involving FATF-listed jurisdictions or OFAC-sanctioned countries
+      must be flagged as high risk. AI assessments must not downgrade risk for
+      transactions involving these jurisdictions without documented enhanced due
+      diligence.
+
+  - id: AML-003
+    name: sar_narrative_required_elements
+    description: >
+      Verifies that AI-generated SAR narratives contain all five essential
+      elements required by FinCEN: who, what, when, where, why. Missing
+      elements result in FinCEN filing deficiencies.
+    severity: critical
+    category: sar_generation
+    regulation_ref:
+      - statute: BSA
+        section: "31 U.S.C. 5318(g)"
+        description: SAR filing requirements
+      - statute: FinCEN
+        section: "SAR Narrative Guidance (2024)"
+        description: Five essential elements of SAR narratives
+    detection:
+      type: required_elements
+      elements:
+        - id: who_element
+          description: Identity of subject(s) involved in suspicious activity
+          check_regex: '(?i)(subject|individual|customer|account\s+holder|person|entity)\s.{0,30}(name|identif|known\s+as|doing\s+business)'
+          required: true
+        - id: what_element
+          description: Description of the suspicious activity or instrument used
+          check_regex: '(?i)(suspicious\s+(activity|transaction|pattern|behavior)|instrument|method|scheme|conduct)'
+          required: true
+        - id: when_element
+          description: Timeframe or dates of the suspicious activity
+          check_regex: '(?i)(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|between\s+\w+\s+\d{4}\s+and|from\s+\w+\s+\d{4}\s+to|during\s+the\s+period|timeframe|date)'
+          required: true
+        - id: where_element
+          description: Location or institution where activity occurred
+          check_regex: '(?i)(branch|location|office|institution|bank|account\s+at|jurisdiction|address)'
+          required: true
+        - id: why_element
+          description: Explanation of why the activity is suspicious
+          check_regex: '(?i)(suspicious\s+because|unusual\s+(because|in\s+that|given)|no\s+(apparent\s+)?(business|economic|legitimate)\s+(purpose|reason)|inconsistent\s+with|not\s+commensurate)'
+          required: true
+    remediation: >
+      All five elements (who, what, when, where, why) must be present in SAR
+      narratives. FinCEN has identified incomplete narratives as a top filing
+      deficiency. Regenerate the narrative with all required elements.
+
+  - id: AML-004
+    name: sar_tipping_off_prohibition
+    description: >
+      Detects AI outputs that would constitute tipping off a customer about
+      a SAR filing, which is a federal crime under 31 U.S.C. 5318(g)(2).
+    severity: critical
+    category: sar_generation
+    regulation_ref:
+      - statute: BSA
+        section: "31 U.S.C. 5318(g)(2)"
+        description: Prohibition on notification of SAR filing
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(inform|notify|tell|alert|advise|let\s.{0,10}know)\s.{0,30}(customer|client|account\s+holder|subject).{0,30}(sar|suspicious\s+activity\s+report|filing|reported|flagged)'
+          label: direct_tipping_off
+        - regex: '(?i)(your\s+(account|transaction)|we\s+(have\s+)?(filed|reported|flagged|submitted)).{0,30}(suspicious|sar|fincen|law\s+enforcement)'
+          label: customer_facing_sar_disclosure
+        - regex: '(?i)(under\s+investigation|being\s+monitored|flagged\s+for\s+review).{0,20}(by|with)\s.{0,20}(fincen|law\s+enforcement|authorities|compliance)'
+          label: investigation_disclosure
+    remediation: >
+      SAR filings and the existence of investigations are strictly confidential.
+      AI outputs in customer-facing channels must never reference SAR filings,
+      FinCEN reports, or ongoing compliance investigations. Violation is a
+      federal criminal offense.
+
+  - id: AML-005
+    name: cdd_beneficial_ownership
+    description: >
+      Verifies that AI-generated customer due diligence outputs include
+      beneficial ownership identification for legal entity customers as
+      required by the CDD Rule.
+    severity: high
+    category: customer_due_diligence
+    regulation_ref:
+      - statute: FinCEN
+        section: "31 CFR 1010.230"
+        description: Beneficial ownership requirements for legal entity customers
+      - statute: CDD Rule
+        section: "81 FR 29398"
+        description: Customer Due Diligence Requirements
+    detection:
+      type: conditional_required_elements
+      condition_regex: '(?i)(legal\s+entity|corporation|llc|limited\s+liability|partnership|trust|company|business\s+account)'
+      elements:
+        - id: beneficial_owner_identification
+          description: Identification of individuals owning 25% or more equity
+          check_regex: '(?i)(beneficial\s+owner|ownership\s+interest|equity\s+(holder|interest|stake)|25\s*%|twenty.?five\s+percent)'
+          required: true
+        - id: control_person
+          description: Identification of individual with significant management responsibility
+          check_regex: '(?i)(control\s+(person|prong)|manag(er|ing)|executive|officer|director|signif.{0,10}(control|responsibility))'
+          required: true
+    remediation: >
+      For all legal entity accounts, CDD outputs must identify beneficial owners
+      (25%+ equity) and at least one control person. Failure to collect this
+      information violates the CDD Rule.
+
+  - id: AML-006
+    name: pep_screening_completeness
+    description: >
+      Verifies that AI risk assessments for politically exposed persons (PEPs)
+      include required enhanced due diligence elements.
+    severity: high
+    category: customer_due_diligence
+    regulation_ref:
+      - statute: BSA
+        section: "31 U.S.C. 5318(i)"
+        description: Due diligence for private banking and correspondent accounts
+      - statute: FATF
+        section: "Recommendation 12"
+        description: Politically exposed persons
+    detection:
+      type: conditional_required_elements
+      condition_regex: '(?i)(politically\s+exposed\s+person|pep|government\s+official|senior\s+(political|foreign)\s+(figure|official))'
+      elements:
+        - id: source_of_wealth
+          description: Determination of source of wealth
+          check_regex: '(?i)(source\s+of\s+(wealth|funds|income|assets)|origin\s+of\s+(funds|wealth))'
+          required: true
+        - id: enhanced_monitoring
+          description: Enhanced ongoing monitoring commitment
+          check_regex: '(?i)(enhanced\s+(monitoring|due\s+diligence|scrutiny|oversight)|additional\s+(monitoring|review)|ongoing\s+monitoring|edd)'
+          required: true
+        - id: senior_approval
+          description: Senior management approval for relationship
+          check_regex: '(?i)(senior\s+management|executive|compliance\s+officer|bsa\s+officer)\s+(approv|sign.?off|authoriz|consent)'
+          required: true
+    remediation: >
+      PEP relationships require source of wealth verification, enhanced ongoing
+      monitoring, and senior management approval. AI risk assessments must include
+      all three elements or flag the deficiency.
+
+  - id: AML-007
+    name: transaction_monitoring_threshold
+    description: >
+      Detects AI outputs that reference incorrect reporting thresholds or
+      suggest transactions below the threshold do not require monitoring.
+    severity: high
+    category: transaction_monitoring
+    regulation_ref:
+      - statute: BSA
+        section: "31 CFR 1010.311"
+        description: CTR filing requirement for transactions over $10,000
+      - statute: FinCEN
+        section: "31 CFR 1010.320"
+        description: Reports of suspicious transactions
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(no\s+(report|filing|ctr)\s+(required|needed|necessary)|exempt|does\s+not\s+(require|need)\s+(report|filing)).{0,30}(under|below|less\s+than)\s.{0,10}\$\s*10[,.]?000'
+          label: incorrect_threshold_exemption
+        - regex: '(?i)(transactions?\s+(under|below|less\s+than)\s+\$\s*10[,.]?000).{0,30}(not\s+monitored|no\s+review|no\s+concern|safe|clear)'
+          label: below_threshold_false_safety
+        - regex: '(?i)(ctr|currency\s+transaction\s+report)\s.{0,20}(threshold|limit|requirement)\s.{0,10}(\$\s*[^1]\d{0,3}[,.]?\d{3}|\$\s*1[1-9][,.]?\d{3}|\$\s*[2-9]\d[,.]?\d{3})'
+          label: incorrect_ctr_threshold_amount
+    remediation: >
+      CTR filing is required for currency transactions over $10,000. Transactions
+      below this threshold still require monitoring for suspicious activity.
+      AI outputs must not suggest sub-threshold transactions are exempt from review.
+
+  - id: AML-008
+    name: risk_rating_justification
+    description: >
+      Verifies that AI-generated customer risk ratings include documented
+      justification with specific risk factors rather than unsupported
+      conclusions.
+    severity: medium
+    category: risk_assessment
+    regulation_ref:
+      - statute: BSA
+        section: "31 CFR 1010.210"
+        description: AML program requirements
+      - statute: FFIEC
+        section: "BSA/AML Examination Manual"
+        description: Risk assessment methodology
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(risk\s+(rating|level|score|classification)\s*:\s*(low|medium|moderate|high|critical)).{0,80}$'
+          label: risk_rating_without_justification
+          description: Risk rating appears at end of output without supporting factors
+        - regex: '(?i)(rated|classified|assigned)\s+(as\s+)?(low|medium|moderate|high)\s+risk\s*[.]?\s*$'
+          label: conclusory_risk_rating
+    remediation: >
+      Risk ratings must be supported by specific factors (customer type, geography,
+      products/services, transaction volume, source of funds). A conclusory risk
+      rating without documented factors is an examination deficiency.
+
+  - id: AML-009
+    name: sanctions_screening_completeness
+    description: >
+      Verifies that AI-generated screening results reference appropriate
+      sanctions lists and do not prematurely clear potential matches.
+    severity: critical
+    category: sanctions_compliance
+    regulation_ref:
+      - statute: OFAC
+        section: "31 CFR Part 501"
+        description: OFAC sanctions regulations
+      - statute: FATF
+        section: "Recommendation 6"
+        description: Targeted financial sanctions
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(no\s+match|clear(ed)?|false\s+positive)\s.{0,20}(ofac|sdn|sanctions).{0,30}(without|no)\s+(manual\s+)?(review|verification|check)'
+          label: premature_sanctions_clearance
+        - regex: '(?i)(partial\s+match|potential\s+match|possible\s+match|fuzzy\s+match).{0,40}(dismiss|disregard|ignore|clear|no\s+action)'
+          label: partial_match_dismissed_without_review
+        - regex: '(?i)(ofac|sanctions|sdn)\s.{0,20}(screen|check|scan).{0,30}(skip|bypass|not\s+(required|necessary|needed)|optional)'
+          label: sanctions_screening_bypass
+    remediation: >
+      All potential sanctions matches, including partial and fuzzy matches, require
+      documented manual review before clearance. AI outputs must not bypass OFAC
+      screening or dismiss potential matches without human review.
+
+  - id: AML-010
+    name: shell_company_indicators
+    description: >
+      Detects AI outputs that fail to identify or flag indicators of shell
+      company activity in transaction narratives or risk assessments.
+    severity: high
+    category: suspicious_activity_detection
+    regulation_ref:
+      - statute: FinCEN
+        section: "FIN-2006-G014"
+        description: Guidance on identifying suspicious activity involving shell companies
+      - statute: FATF
+        section: "Recommendation 24"
+        description: Transparency of legal persons
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(no\s+(employees?|physical\s+(office|location|presence)|operations?|revenue|business\s+activity)).{0,40}(normal|typical|no\s+concern|low\s+risk|routine)'
+          label: shell_indicators_normalized
+        - regex: '(?i)(registered\s+agent\s+address|nominee\s+(director|shareholder|officer)|bearer\s+shares?).{0,30}(acceptable|standard|common|no\s+issue)'
+          label: opacity_indicators_dismissed
+    remediation: >
+      Shell company indicators (no employees, no physical presence, nominee
+      directors, registered agent addresses only) must be flagged in risk
+      assessments. AI outputs should never normalize these indicators.
+
+  - id: AML-011
+    name: record_retention_compliance
+    description: >
+      Verifies that AI outputs related to AML compliance reference appropriate
+      record retention periods required under BSA.
+    severity: medium
+    category: recordkeeping
+    regulation_ref:
+      - statute: BSA
+        section: "31 U.S.C. 5313"
+        description: Record retention requirements
+      - statute: FinCEN
+        section: "31 CFR 1010.430"
+        description: Five-year record retention
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(retain|keep|store|maintain|preserve)\s.{0,20}(record|document|file|data|log).{0,30}(less\s+than|under|fewer\s+than|only)\s*[1-4]\s*(year|yr)'
+          label: insufficient_retention_period
+        - regex: '(?i)(delete|destroy|purge|dispose|remove)\s.{0,20}(sar|ctr|transaction\s+record|kyc|cdd|customer\s+(record|file)).{0,20}(after|within)\s*[1-4]\s*(year|yr)'
+          label: premature_record_destruction
+    remediation: >
+      BSA requires a minimum five-year retention period for CTRs, SARs, and
+      related records. AI outputs must not recommend destruction of BSA records
+      before the required retention period expires.
+
+  - id: AML-012
+    name: correspondent_banking_due_diligence
+    description: >
+      Verifies AI risk assessments for correspondent banking relationships
+      include required due diligence elements.
+    severity: high
+    category: correspondent_banking
+    regulation_ref:
+      - statute: BSA
+        section: "31 U.S.C. 5318(i)"
+        description: Due diligence for correspondent accounts
+      - statute: Patriot Act
+        section: "Section 312"
+        description: Special due diligence for correspondent accounts
+    detection:
+      type: conditional_required_elements
+      condition_regex: '(?i)(correspondent\s+(bank|account|relationship)|respondent\s+bank|nostro|vostro)'
+      elements:
+        - id: aml_program_assessment
+          description: Assessment of respondent's AML program adequacy
+          check_regex: '(?i)(aml\s+program|anti-?money\s+laundering\s+(program|controls?|framework)|compliance\s+program)\s.{0,30}(assess|evaluat|review|adequa)'
+          required: true
+        - id: regulatory_oversight
+          description: Nature of regulation and supervision in respondent's jurisdiction
+          check_regex: '(?i)(regulat(or|ory|ed)|supervis(ed|ion|or)|licensed|chartered|jurisdicti).{0,30}(oversight|framework|regime|authority)'
+          required: true
+        - id: payable_through_check
+          description: Determination if account is payable-through
+          check_regex: '(?i)(payable.?through|pass.?through|nested|sub.?account|third.?party\s+access)'
+          required: true
+    remediation: >
+      Correspondent banking relationships require documented assessment of the
+      respondent's AML program, regulatory oversight, and determination of whether
+      the account functions as payable-through. Missing elements constitute a
+      Section 312 deficiency.
