@@ -1,13 +1,411 @@
+# SOX Audit Trail Compliance Rules
+# Evaluates AI decision outputs for audit documentation, financial reporting
+# accuracy, and internal control compliance
+# Applicable regulations: Sarbanes-Oxley Act Sections 302, 404
+
+schema_version: "1.0"
+sector: financial
+domain: sox_audit
+last_updated: "2026-03-24"
+
 rules:
   - id: SOX-001
-    category: audit_trail
+    name: decision_audit_trail_completeness
+    description: >
+      Verifies that AI decision outputs include a complete audit trail with
+      timestamp, user/system identifier, input summary, decision rationale,
+      and output classification. Required for SOX 404 internal control
+      documentation.
     severity: critical
-    description: "Audit trail modification language detected"
-    keywords: ["delete audit", "remove log", "clear history", "erase record"]
-    regulation_ref: "SOX-302"
+    category: audit_trail
+    regulation_ref:
+      - statute: SOX
+        section: "Section 404"
+        description: Management assessment of internal controls
+      - statute: PCAOB
+        section: "AS 2201"
+        description: Auditing internal control over financial reporting
+    detection:
+      type: required_elements
+      elements:
+        - id: timestamp
+          description: ISO 8601 timestamp of when the decision was generated
+          check_regex: '(?i)(timestamp|date_?time|generated_?at|decision_?time|created_?at)\s*[:=]\s*\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}'
+          required: true
+        - id: user_system_id
+          description: Identifier of user or system that initiated the AI decision
+          check_regex: '(?i)(user_?id|system_?id|operator|initiated_?by|requested_?by|actor)\s*[:=]\s*\S+'
+          required: true
+        - id: model_version
+          description: Version identifier of the AI model used
+          check_regex: '(?i)(model_?(version|id|name)|algorithm_?version|engine_?version|ai_?version)\s*[:=]\s*\S+'
+          required: true
+        - id: decision_rationale
+          description: Documented reasoning for the output
+          check_regex: '(?i)(rationale|reasoning|justification|basis|explanation|decision_?reason|factors_?considered)'
+          required: true
+        - id: confidence_score
+          description: Confidence level or probability of the AI output
+          check_regex: '(?i)(confidence|probability|certainty|score|likelihood)\s*[:=]\s*\d'
+          required: true
+    remediation: >
+      All AI-generated decisions affecting financial reporting or internal controls
+      must include a complete audit trail. Missing elements create gaps in SOX 404
+      documentation that auditors will flag as control deficiencies.
+
   - id: SOX-002
-    category: internal_controls
+    name: material_misstatement_indicators
+    description: >
+      Detects AI outputs in financial reporting that contain indicators of
+      potential material misstatement, including round-number bias, statistical
+      anomalies, and unsupported precision.
+    severity: critical
+    category: financial_reporting
+    regulation_ref:
+      - statute: SOX
+        section: "Section 302"
+        description: Corporate responsibility for financial reports
+      - statute: PCAOB
+        section: "AS 2401"
+        description: Consideration of fraud in a financial statement audit
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(revenue|earnings|income|profit|loss|assets?|liabilit)\s*[:=]?\s*\$?\s*\d+[,.]?000[,.]?000[,.]?000\s*$'
+          label: suspiciously_round_financial_figure
+          description: Exactly round numbers in financial outputs suggest estimation rather than calculation
+        - regex: '(?i)(estimat|project|forecast|predict)\s.{0,30}(exact|precisely|exactly)\s+\$?\d'
+          label: false_precision_in_estimates
+        - regex: '(?i)(always|never|guaranteed|certain|impossible|zero\s+risk)\s.{0,30}(revenue|income|loss|default|return)'
+          label: absolute_financial_claims
+        - regex: '(?i)(immaterial|not\s+material|below\s+materiality|de\s+minimis).{0,30}(without|no)\s.{0,20}(analysis|calculation|threshold|quantif)'
+          label: unsupported_materiality_conclusion
+    remediation: >
+      Financial figures must be derived from documented calculations. Estimates
+      must state assumptions and ranges. Materiality determinations require
+      quantitative thresholds defined in the audit plan. Absolute claims about
+      financial outcomes are never appropriate.
+
+  - id: SOX-003
+    name: segregation_of_duties_violation
+    description: >
+      Detects AI outputs indicating that a single user or system has performed
+      incompatible functions, violating segregation of duties controls.
     severity: high
-    description: "Internal control override language"
-    keywords: ["bypass control", "override approval", "skip verification"]
-    regulation_ref: "SOX-404"
+    category: internal_controls
+    regulation_ref:
+      - statute: SOX
+        section: "Section 404"
+        description: Internal control requirements
+      - statute: COSO
+        section: "Control Activities Principle 10"
+        description: Segregation of duties
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(same\s+(user|person|individual|operator)|single\s+(user|person)).{0,40}(initiat|approv|authoriz|review|reconcil|post|record).{0,20}(and|&|also)\s.{0,20}(initiat|approv|authoriz|review|reconcil|post|record)'
+          label: same_user_incompatible_functions
+        - regex: '(?i)(auto.?approv|self.?approv|no\s+(secondary|additional|separate)\s+(review|approval|authorization))'
+          label: missing_secondary_approval
+        - regex: '(?i)(override|bypass)\s.{0,20}(approval|authorization|control|segregation|dual\s+control)'
+          label: control_override
+    remediation: >
+      AI systems processing financial transactions must enforce segregation of
+      duties. Initiation, authorization, recording, and reconciliation must
+      involve different users or independent systems. Auto-approval without
+      secondary review is a control deficiency.
+
+  - id: SOX-004
+    name: change_management_documentation
+    description: >
+      Verifies that AI outputs related to system or process changes include
+      required change management documentation elements.
+    severity: high
+    category: internal_controls
+    regulation_ref:
+      - statute: SOX
+        section: "Section 404"
+        description: Internal control over financial reporting
+      - statute: COSO
+        section: "Control Activities Principle 11"
+        description: General controls over technology
+    detection:
+      type: conditional_required_elements
+      condition_regex: '(?i)(change|modif|update|patch|deploy|migration|upgrade|config(uration)?\s+change).{0,30}(request|ticket|order|implementation|record)'
+      elements:
+        - id: change_requester
+          description: Identity of person or system requesting the change
+          check_regex: '(?i)(request(ed|or)?_?by|submitt(ed|er)|initiat(ed|or))\s*[:=]\s*\S+'
+          required: true
+        - id: change_approver
+          description: Identity of person approving the change
+          check_regex: '(?i)(approv(ed|er)|authoriz(ed|er)|sign.?off)\s*[:=]\s*\S+'
+          required: true
+        - id: change_description
+          description: Description of what was changed
+          check_regex: '(?i)(description|summary|detail|scope|what\s+(was\s+)?chang)'
+          required: true
+        - id: testing_evidence
+          description: Evidence of testing before deployment
+          check_regex: '(?i)(test(ed|ing)?|uat|user\s+acceptance|validation|verif(ied|ication))\s*[:=]?\s*\S+'
+          required: true
+        - id: rollback_plan
+          description: Documented rollback plan
+          check_regex: '(?i)(rollback|revert|back.?out|recovery\s+plan|fallback)'
+          required: true
+    remediation: >
+      Changes to AI systems affecting financial reporting require documented change
+      management including requester, approver, description, testing evidence, and
+      rollback plan. Missing elements are IT general control deficiencies.
+
+  - id: SOX-005
+    name: access_control_logging
+    description: >
+      Verifies that AI system outputs include access control metadata
+      showing proper authentication and authorization.
+    severity: high
+    category: access_controls
+    regulation_ref:
+      - statute: SOX
+        section: "Section 404"
+        description: Internal control requirements
+      - statute: PCAOB
+        section: "AS 2201.33"
+        description: Information technology general controls
+    detection:
+      type: required_elements
+      elements:
+        - id: authentication_method
+          description: Method of user authentication
+          check_regex: '(?i)(auth(entication|enticated)?_?method|login_?type|credential_?type|sso|mfa|multi.?factor)\s*[:=]\s*\S+'
+          required: true
+        - id: authorization_level
+          description: User role or permission level
+          check_regex: '(?i)(role|permission|access_?level|authorization|privilege|group)\s*[:=]\s*\S+'
+          required: true
+        - id: session_id
+          description: Session identifier for traceability
+          check_regex: '(?i)(session_?id|session_?token|request_?id|correlation_?id|trace_?id)\s*[:=]\s*\S+'
+          required: true
+    remediation: >
+      AI decision outputs must log authentication method, authorization level, and
+      session identifier. These elements are necessary for access control testing
+      during SOX audits.
+
+  - id: SOX-006
+    name: financial_estimate_documentation
+    description: >
+      Verifies that AI-generated financial estimates include required
+      documentation of methodology, assumptions, and sensitivity analysis.
+    severity: high
+    category: financial_reporting
+    regulation_ref:
+      - statute: SOX
+        section: "Section 302"
+        description: Certification of financial statements
+      - statute: PCAOB
+        section: "AS 2501"
+        description: Auditing accounting estimates
+    detection:
+      type: conditional_required_elements
+      condition_regex: '(?i)(estimat|forecast|project|provision|allowance|reserve|fair\s+value|impairment|valuation)\s.{0,20}(of|for|:)\s.{0,20}\$'
+      elements:
+        - id: methodology
+          description: Description of estimation methodology
+          check_regex: '(?i)(method(ology)?|approach|technique|model|algorithm|formula|calculation\s+basis)'
+          required: true
+        - id: key_assumptions
+          description: Key assumptions underlying the estimate
+          check_regex: '(?i)(assum(e|ption|ing)|premise|parameter|input|variable|factor)\s*[:=]'
+          required: true
+        - id: data_sources
+          description: Sources of data used in the estimate
+          check_regex: '(?i)(data\s+source|source\s+(data|of\s+data)|input\s+data|based\s+on\s+data\s+from|derived\s+from)'
+          required: true
+        - id: sensitivity_range
+          description: Sensitivity analysis or confidence interval
+          check_regex: '(?i)(sensitivit|range|interval|upper\s+bound|lower\s+bound|best\s+case|worst\s+case|scenario|±|\+/-|margin\s+of\s+error)'
+          required: true
+    remediation: >
+      Financial estimates must document methodology, assumptions, data sources, and
+      sensitivity analysis. AI-generated estimates without these elements cannot be
+      relied upon for financial reporting purposes.
+
+  - id: SOX-007
+    name: data_integrity_validation
+    description: >
+      Detects AI outputs that lack input data validation markers, creating
+      risk that decisions were made on corrupt, incomplete, or stale data.
+    severity: high
+    category: data_quality
+    regulation_ref:
+      - statute: SOX
+        section: "Section 404"
+        description: Effectiveness of internal controls
+      - statute: PCAOB
+        section: "AS 2201.39"
+        description: Evaluating identified deficiencies
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(data\s+as\s+of|data_?date|snapshot_?date|extract_?date|data_?freshness)\s*[:=]\s*\d{4}-\d{2}-\d{2}'
+          label: data_date_present
+          negate: true
+          description: Absence of data date marker indicates potential stale data usage
+        - regex: '(?i)(null|missing|n/?a|unavailable|incomplete)\s.{0,20}(data|field|record|value).{0,30}(proceed|continu|process|calculat|ignor)'
+          label: processing_with_missing_data
+        - regex: '(?i)(row|record|transaction)\s+(count|total)\s*[:=]\s*0\b'
+          label: empty_dataset_processed
+    remediation: >
+      AI outputs must include data freshness markers and must not proceed with
+      incomplete or empty datasets without documented exception handling.
+      Processing decisions on null or missing data is a control failure.
+
+  - id: SOX-008
+    name: management_override_detection
+    description: >
+      Detects indicators of management override of AI controls, which is a
+      specific fraud risk factor under AS 2401.
+    severity: critical
+    category: fraud_risk
+    regulation_ref:
+      - statute: PCAOB
+        section: "AS 2401.57"
+        description: Management override of controls as fraud risk
+      - statute: SOX
+        section: "Section 302"
+        description: CEO/CFO certification responsibilities
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(management|executive|cfo|ceo|controller)\s+(override|overrid|bypass|exception|adjust).{0,40}(without|no)\s+(documentation|approval|justif|rationale)'
+          label: undocumented_management_override
+        - regex: '(?i)(manual\s+(adjustment|entry|override|journal)).{0,40}(period\s+end|quarter\s+end|year\s+end|close|closing)'
+          label: period_end_manual_adjustment
+        - regex: '(?i)(force|forced|forcing)\s.{0,20}(reconcil|balanc|match|tie|agree).{0,20}(output|result|figure|number|amount)'
+          label: forced_reconciliation
+    remediation: >
+      Management overrides of AI controls must be documented with justification
+      and independently reviewed. Period-end manual adjustments and forced
+      reconciliations are heightened fraud risk indicators requiring auditor
+      attention per AS 2401.
+
+  - id: SOX-009
+    name: journal_entry_controls
+    description: >
+      Verifies that AI-generated journal entries include required control
+      elements and proper authorization chain.
+    severity: high
+    category: financial_reporting
+    regulation_ref:
+      - statute: SOX
+        section: "Section 404"
+        description: Internal controls over financial reporting
+      - statute: PCAOB
+        section: "AS 2201.67"
+        description: Journal entry testing requirements
+    detection:
+      type: conditional_required_elements
+      condition_regex: '(?i)(journal\s+entry|je\s*#|adjusting\s+entry|debit.{0,20}credit|dr\.?\s.{0,30}cr\.?)'
+      elements:
+        - id: entry_description
+          description: Business purpose of the journal entry
+          check_regex: '(?i)(description|purpose|reason|narrative|memo|explanation)\s*[:=]'
+          required: true
+        - id: supporting_documentation
+          description: Reference to supporting documentation
+          check_regex: '(?i)(support(ing)?_?doc|attachment|reference|invoice|receipt|contract|agreement|source_?doc)\s*[:=]'
+          required: true
+        - id: preparer_reviewer
+          description: Separate preparer and reviewer identification
+          check_regex: '(?i)(prepar(ed|er)|creat(ed|or)).{0,40}(review(ed|er)|approv(ed|er))'
+          required: true
+        - id: account_codes
+          description: General ledger account codes
+          check_regex: '(?i)(account|gl|general\s+ledger|acct)\s*(code|number|#|no\.?)?\s*[:=]\s*\d'
+          required: true
+    remediation: >
+      AI-generated journal entries must include business purpose, supporting
+      documentation references, separate preparer/reviewer, and proper GL account
+      codes. Entries without these elements fail journal entry control testing.
+
+  - id: SOX-010
+    name: period_end_cutoff_accuracy
+    description: >
+      Detects AI outputs in financial reporting that may indicate cutoff
+      errors (transactions recorded in wrong period).
+    severity: high
+    category: financial_reporting
+    regulation_ref:
+      - statute: SOX
+        section: "Section 302"
+        description: Fair presentation of financial statements
+      - statute: PCAOB
+        section: "AS 2301.11"
+        description: Substantive testing of transactions
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(transaction\s+date|trade\s+date|service\s+date|delivery\s+date)\s*[:=]?\s*\d{4}-\d{2}-\d{2}.{0,40}(recording\s+period|posting\s+period|book(ed|ing)\s+period)\s*[:=]?\s*\d{4}-\d{2}'
+          label: date_mismatch_check
+          description: Flag if transaction date and recording period can be compared
+        - regex: '(?i)(backdat|pre-?dat|post-?dat|redat)\s.{0,20}(entry|transaction|invoice|journal)'
+          label: backdating_indicator
+        - regex: '(?i)(held?\s+open|keep(ing)?\s+open|not\s+yet\s+closed?|delay(ed|ing)?\s+(close|closing|cut.?off))'
+          label: period_held_open
+    remediation: >
+      AI systems must enforce proper period-end cutoff. Transactions must be
+      recorded in the period when the earnings process is complete and the
+      amount is determinable. Backdating entries or holding periods open are
+      audit red flags.
+
+  - id: SOX-011
+    name: exception_handling_documentation
+    description: >
+      Verifies that when AI systems encounter exceptions or errors, the
+      outputs include proper exception documentation rather than silently
+      continuing or defaulting.
+    severity: medium
+    category: internal_controls
+    regulation_ref:
+      - statute: SOX
+        section: "Section 404"
+        description: Internal controls effectiveness
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(error|exception|failure|timeout|invalid).{0,20}(default(ed|ing)?(\s+to)?|assum(ed|ing)|substitut(ed|ing)|fallback)'
+          label: silent_error_defaulting
+        - regex: '(?i)(catch|caught|trapped|handled)\s.{0,20}(error|exception).{0,30}(continu(ed|ing)|proceed|ignor|suppress|swallow)'
+          label: exception_suppression
+    remediation: >
+      AI system exceptions must be logged with error details, impact assessment,
+      and resolution action. Silent defaulting or exception suppression creates
+      undetectable control failures.
+
+  - id: SOX-012
+    name: third_party_reliance_disclosure
+    description: >
+      Detects AI outputs that rely on third-party data or services without
+      disclosing the reliance, which affects SOC 1/SOC 2 complementary user
+      entity controls.
+    severity: medium
+    category: vendor_management
+    regulation_ref:
+      - statute: SOX
+        section: "Section 404"
+        description: Internal controls including outsourced processes
+      - statute: AICPA
+        section: "SOC 1 (SSAE 18)"
+        description: Controls at service organizations
+    detection:
+      type: pattern
+      patterns:
+        - regex: '(?i)(third.?party|external|vendor|service\s+provider|api|outsourc).{0,30}(data|feed|service|system|process).{0,40}(without|no|missing)\s.{0,20}(soc\s*[12]|audit\s+report|assurance|certification)'
+          label: undisclosed_third_party_reliance
+        - regex: '(?i)(source|provided\s+by|obtained\s+from|retrieved\s+from)\s*[:=]?\s*.{0,30}(api|third.?party|external|vendor).{0,20}(not\s+(validated|verified|confirmed))'
+          label: unvalidated_external_data
+    remediation: >
+      AI outputs relying on third-party data or services must disclose the
+      reliance and reference applicable SOC reports. Complementary user entity
+      controls must be documented per the service organization's SOC report.
