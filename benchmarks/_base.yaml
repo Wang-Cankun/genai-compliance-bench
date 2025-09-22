@@ -2,3 +2,4 @@ defaults:
   severity: medium
   case_insensitive: true
   enabled: true
+# Updated: 8350c5f9
