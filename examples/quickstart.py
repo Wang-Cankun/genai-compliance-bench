@@ -18,3 +18,4 @@ print(f"Violations: {len(result.violations)}")
 for v in result.violations:
     print(f"  [{v.severity}] {v.rule_id}: {v.explanation}")
     print(f"    Regulation: {v.regulation_ref}")
+# Updated: f109e84a
