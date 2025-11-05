@@ -37,3 +37,4 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Run tests
         run: pytest --cov=genai_compliance_bench --cov-report=term-missing
+# Updated: 12e5e97c
