@@ -51,3 +51,4 @@ class TestBatchEvaluator:
         report = evaluator.evaluate_batch(outputs)
         assert isinstance(report.violations_by_severity, dict)
         assert isinstance(report.violations_by_regulation, dict)
+# Updated: d434a8a9
