@@ -186,3 +186,4 @@ def _check_rules_fast(text: str, rules: list[ComplianceRule]) -> list[Violation]
                 break
 
     return violations
+# Updated: 8411f1ac

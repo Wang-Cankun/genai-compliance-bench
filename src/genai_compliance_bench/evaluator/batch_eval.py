@@ -293,3 +293,4 @@ def _build_report(results: list[ComplianceResult], elapsed_s: float) -> Aggregat
         elapsed_s=elapsed_s,
         results=results,
     )
+# Updated: 250f8435
