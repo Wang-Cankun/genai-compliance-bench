@@ -4,12 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "genai-compliance-bench"
-version = "0.2.1"
+version = "0.3.0"
 description = "Pre-deployment compliance evaluation benchmarks for generative AI in regulated industries."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
-authors = [{ name = "genai-compliance-bench contributors" }]
+authors = [
+    { name = "genai-compliance-bench contributors" },
+]
 keywords = ["compliance", "evaluation", "benchmark", "genai", "llm", "nist", "ai-rmf"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -23,12 +25,26 @@ classifiers = [
     "Topic :: Software Development :: Testing",
     "Typing :: Typed",
 ]
-dependencies = ["pyyaml>=6.0", "pydantic>=2.0", "rich>=13.0"]
+
+dependencies = [
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+    "rich>=13.0",
+]
 
 [project.optional-dependencies]
-learner = ["openai>=1.0"]
-dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.4.0", "mypy>=1.8"]
-all = ["genai-compliance-bench[learner,dev]"]
+learner = [
+    "openai>=1.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4.0",
+    "mypy>=1.8",
+]
+all = [
+    "genai-compliance-bench[learner,dev]",
+]
 
 [project.urls]
 Homepage = "https://github.com/genai-compliance-bench/genai-compliance-bench"
