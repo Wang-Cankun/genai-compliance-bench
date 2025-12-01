@@ -156,4 +156,3 @@ Benchmark passes if precision and recall meet thresholds.
 **Custom evaluator logic**: subclass `PolicyEngine` and override the matching pipeline. The `RuleLoader` and `Explainer` are designed to be used independently.
 
 **Output integration**: `ComplianceResult.to_dict()` returns a serializable dictionary. Pipe this to your existing compliance reporting tools.
-# Updated: 5a4cf30f

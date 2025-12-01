@@ -181,4 +181,3 @@ for case in test_cases:
 - **Pattern matching has limits.** Subtle discrimination through seemingly neutral language (e.g., "cultural fit" as a proxy) requires context that keyword and regex matching cannot fully capture. The learner module partially addresses this through accumulated risk features, but human compliance review remains necessary.
 
 - **Benchmark outputs are illustrative.** Test cases use simplified outputs. Production AI outputs are longer and more nuanced. Benchmark pass rates may not predict production compliance rates.
-# Updated: e63f5cb3

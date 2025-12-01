@@ -32,4 +32,3 @@ rules:
       pii_pattern: '\b\d{3}-\d{2}-\d{4}\b'
       data_pattern: '\$[\d,]+\.?\d*'
       max_char_distance: 200
-# Updated: dc3a67fb

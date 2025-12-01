@@ -1,3 +1,4 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,15 +8,28 @@ dist/
 build/
 .eggs/
 *.egg
+
+# Virtual environments
 .venv/
 venv/
+ENV/
+
+# IDE
 .idea/
 .vscode/
 *.swp
+*.swo
+
+# Testing
 .pytest_cache/
 htmlcov/
 .coverage
 .coverage.*
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Data
 *.db
 *.jsonl

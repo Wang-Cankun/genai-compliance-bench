@@ -183,4 +183,3 @@ for i, result in enumerate([result_1, result_2, result_3, result_4], 1):
 - **TCPA consent tracking requires external data.** The tool can flag outputs that appear to be outbound marketing without consent indicators in the context, but it cannot verify whether consent actually exists in the carrier's records. The `context` parameter should include consent status.
 
 - **Network architecture sensitivity is hard to define.** "Too much detail about network infrastructure" is judgment-dependent. Current rules flag specific patterns (IP ranges, equipment identifiers, topology descriptions) but cannot fully assess whether a network diagnostic output reveals exploitable information.
-# Updated: ac2a2103

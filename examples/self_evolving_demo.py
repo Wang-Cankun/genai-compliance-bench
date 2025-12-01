@@ -44,4 +44,3 @@ for f in features[:5]:
 print(f"\nTotal features in store: {store.total_features}")
 print(f"Sectors covered: {store.sectors}")
 print(f"Oldest feature: {store.oldest_feature_date}")
-# Updated: 2c622d97

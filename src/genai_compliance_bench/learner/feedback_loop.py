@@ -204,4 +204,3 @@ class FeedbackLoop:
                 entry = FeedbackEntry.from_dict(json.loads(line))
                 self._entries.append(entry)
                 self._update_stats(entry)
-# Updated: 05a1a50b

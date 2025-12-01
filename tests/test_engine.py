@@ -125,4 +125,3 @@ class TestMultiSector:
         # Both should flag PII
         assert any(v.category == "pii_exposure" for v in fin_result.violations)
         assert any(v.category == "pii_exposure" for v in tel_result.violations)
-# Updated: a40628f2

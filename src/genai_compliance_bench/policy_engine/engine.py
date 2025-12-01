@@ -453,4 +453,3 @@ def _build_explanation(
         f"({counts_str}). Overall risk: {risk_level.value}. "
         f"Score: {score:.2f}.{regs_str}"
     )
-# Updated: ea901253

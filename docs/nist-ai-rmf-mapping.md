@@ -152,4 +152,3 @@ The MANAGE function addresses identified risks. genai-compliance-bench supports 
 - NIST AI 100-1: Artificial Intelligence Risk Management Framework (AI RMF 1.0). https://doi.org/10.6028/NIST.AI.100-1
 - NIST AI 100-1 Playbook. https://airc.nist.gov/AI_RMF_Knowledge_Base/Playbook
 - NIST AI 600-1: Generative AI Profile. https://doi.org/10.6028/NIST.AI.600-1
-# Updated: 7417b350

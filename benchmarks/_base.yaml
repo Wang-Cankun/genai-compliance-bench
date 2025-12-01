@@ -1,5 +1,5 @@
+# Cross-sector defaults merged into every rule unless overridden.
 defaults:
   severity: medium
   case_insensitive: true
   enabled: true
-# Updated: 8350c5f9

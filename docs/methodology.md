@@ -91,4 +91,3 @@ Example output:
 Model monitoring tools (Arize, WhyLabs, Fiddler) answer "is the model still performing well?" genai-compliance-bench answers "will this model's outputs get us fined?"
 
 These are complementary. Use genai-compliance-bench in your CI/CD pipeline before deployment. Use monitoring tools after deployment. Both are necessary; neither replaces the other.
-# Updated: 531d7096

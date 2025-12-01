@@ -308,4 +308,3 @@ def _row_to_feature(row: sqlite3.Row) -> RiskFeature:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
-# Updated: b887c3e7
