@@ -185,7 +185,7 @@
       key ID from a public key server and include it as a comment
       in the boilerplate notice.
 
-   Copyright [yyyy] [name of copyright owner]
+   Copyright 2023-2025 genai-compliance-bench contributors
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
