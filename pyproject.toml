@@ -48,9 +48,9 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/genai-compliance-bench/genai-compliance-bench"
-Documentation = "https://github.com/genai-compliance-bench/genai-compliance-bench/tree/main/docs"
-Issues = "https://github.com/genai-compliance-bench/genai-compliance-bench/issues"
+Homepage = "https://github.com/Wang-Cankun/genai-compliance-bench"
+Documentation = "https://github.com/Wang-Cankun/genai-compliance-bench/tree/main/docs"
+Issues = "https://github.com/Wang-Cankun/genai-compliance-bench/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/genai_compliance_bench"]
