@@ -32,7 +32,7 @@ To add a benchmark:
 
 **Sector expertise** -- if you work in a regulated industry, your knowledge of actual compliance requirements is more valuable than code contributions. Open an issue describing a compliance scenario that should be tested.
 
-**New sectors** -- healthcare (HIPAA), energy (NERC CIP), and insurance are planned. If you have domain knowledge, reach out.
+**New sectors** -- healthcare (HIPAA) is now supported. Energy (NERC CIP) and insurance are planned. If you have domain knowledge, reach out.
 
 ## Code Standards
 
@@ -55,3 +55,11 @@ Test cases should come from real regulatory requirements, not hypothetical scena
 ## License
 
 By contributing, you agree that your contributions will be licensed under Apache 2.0.
+
+## Reporting Issues
+
+When reporting a false positive or missed violation, include:
+- The AI output text that was evaluated
+- The sector and context used
+- Which rule ID fired (or should have fired)
+- The regulation section you believe applies
