@@ -28,9 +28,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "pyyaml>=6.0",
-    "pydantic>=2.0",
-    "rich>=13.0",
+    "pyyaml>=6.0.1",
+    "pydantic>=2.5",
+    "rich>=13.7",
 ]
 
 [project.optional-dependencies]
@@ -40,8 +40,8 @@ learner = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "ruff>=0.4.0",
-    "mypy>=1.8",
+    "ruff>=0.8.0",
+    "mypy>=1.13",
 ]
 all = [
     "genai-compliance-bench[learner,dev]",
