@@ -6,7 +6,7 @@
 schema_version: "1.0"
 sector: financial
 domain: aml
-last_updated: "2026-03-24"
+last_updated: "2026-01-09"
 
 rules:
   - id: AML-001
