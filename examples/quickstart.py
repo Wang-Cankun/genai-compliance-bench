@@ -12,9 +12,11 @@ result = engine.evaluate(
 )
 
 print(f"Compliant: {result.passed}")
-print(f"Risk score: {result.score:.2f}")
+print(f"Risk level: {result.risk_level.value}")
+print(f"Score: {result.score:.2f}")
 print(f"Violations: {len(result.violations)}")
 
 for v in result.violations:
-    print(f"  [{v.severity}] {v.rule_id}: {v.explanation}")
-    print(f"    Regulation: {v.regulation_ref}")
+    print(f"  [{v.severity.value}] {v.rule_id}: {v.description}")
+    if v.regulation_ref:
+        print(f"    Regulation: {v.regulation_ref}")
