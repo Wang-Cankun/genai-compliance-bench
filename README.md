@@ -64,6 +64,13 @@ Violations: 2
 | ECOA / Reg B | Fair lending, adverse action notices | `benchmarks/financial/fair_lending/` |
 | BSA/AML | Suspicious activity detection, reporting | `benchmarks/financial/aml/` |
 
+### Healthcare
+
+| Regulation | Scope | Benchmark Path |
+|---|---|---|
+| HIPAA Privacy Rule | Protected health information in AI outputs | `benchmarks/healthcare/` |
+| HIPAA Security Rule | Technical safeguards for ePHI | `benchmarks/healthcare/` |
+
 ### Telecommunications
 
 | Regulation | Scope | Benchmark Path |
