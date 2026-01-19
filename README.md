@@ -163,8 +163,8 @@ If you use genai-compliance-bench in research, please cite:
 ```bibtex
 @software{genai_compliance_bench,
   title  = {genai-compliance-bench: Pre-deployment Compliance Evaluation Benchmarks for Generative AI},
-  year   = {2025},
-  url    = {https://github.com/genai-compliance-bench/genai-compliance-bench},
+  year   = {2026},
+  url    = {https://github.com/Wang-Cankun/genai-compliance-bench},
   license = {Apache-2.0}
 }
 ```
