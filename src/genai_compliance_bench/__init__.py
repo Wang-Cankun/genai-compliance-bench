@@ -1,6 +1,6 @@
 """genai-compliance-bench: Pre-deployment compliance evaluation benchmarks for generative AI."""
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 from genai_compliance_bench.policy_engine.engine import (
     ComplianceResult,
