@@ -125,3 +125,16 @@ class TestMultiSector:
         # Both should flag PII
         assert any(v.category == "pii_exposure" for v in fin_result.violations)
         assert any(v.category == "pii_exposure" for v in tel_result.violations)
+
+
+class TestExplainableOutput:
+    def test_explanation_includes_regulation(self):
+        engine = PolicyEngine()
+        engine.load_sector("financial")
+        result = engine.evaluate(
+            output="Denied due to applicant's race and gender.",
+            sector="financial",
+            context={"use_case": "credit_decisioning"},
+        )
+        assert result.explanation
+        assert len(result.explanation) > 0
