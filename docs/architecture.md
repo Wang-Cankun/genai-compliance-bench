@@ -1,5 +1,7 @@
 # Architecture
 
+> Last updated: January 2026 (v0.3.1)
+
 ## System Overview
 
 ```
